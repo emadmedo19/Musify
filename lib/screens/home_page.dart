@@ -25,10 +25,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:musify/constants/app_constants.dart';
 import 'package:musify/extensions/l10n.dart';
 import 'package:musify/main.dart';
+import 'package:musify/screens/music_taste_page.dart';
 import 'package:musify/services/common_services.dart';
 import 'package:musify/services/listening_stats_service.dart';
+import 'package:musify/services/music_taste_service.dart';
 import 'package:musify/services/playlists_manager.dart';
 import 'package:musify/services/regional_discovery_service.dart';
+import 'package:musify/services/router_service.dart';
 import 'package:musify/services/settings_manager.dart';
 import 'package:musify/utilities/app_utils.dart';
 import 'package:musify/utilities/async_loader.dart';
@@ -48,19 +51,28 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final Future<List> _suggestedPlaylistsFuture;
+  late Future<List> _suggestedPlaylistsFuture;
+  late Future<List> _favoriteAlbumsFuture;
+  late Future<List> _ninetiesFuture;
+  bool _tastePickerOpen = false;
   late Future<List> _recommendedSongsFuture;
 
   @override
   void initState() {
     super.initState();
-    _suggestedPlaylistsFuture = getRegionalHomePlaylists();
-    _recommendedSongsFuture = getRecommendedSongs();
+    _loadDiscovery();
+    musicTaste.addListener(_refreshDiscovery);
+    if (!musicTaste.value.completed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openTastePicker();
+      });
+    }
     externalRecommendations.addListener(_refreshRecommendedSongs);
   }
 
   @override
   void dispose() {
+    musicTaste.removeListener(_refreshDiscovery);
     externalRecommendations.removeListener(_refreshRecommendedSongs);
     super.dispose();
   }
@@ -72,11 +84,141 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _loadDiscovery() {
+    final ready = musicTaste.value.completed;
+    _suggestedPlaylistsFuture = ready
+        ? getRegionalHomePlaylists()
+        : Future.value([]);
+    _recommendedSongsFuture = ready ? getRecommendedSongs() : Future.value([]);
+    _favoriteAlbumsFuture = ready
+        ? getFavoriteArtistAlbums()
+        : Future.value([]);
+    _ninetiesFuture = ready ? getNinetiesHomeSongs() : Future.value([]);
+  }
+
+  void _refreshDiscovery() {
+    if (mounted) setState(_loadDiscovery);
+  }
+
+  Future<void> _openTastePicker() async {
+    if (_tastePickerOpen) return;
+    _tastePickerOpen = true;
+    try {
+      await Navigator.of(context, rootNavigator: true).push<bool>(
+        MaterialPageRoute(
+          builder: (_) =>
+              MusicTastePage(initial: musicTaste.value, onSave: saveMusicTaste),
+          fullscreenDialog: true,
+        ),
+      );
+    } finally {
+      _tastePickerOpen = false;
+    }
+  }
+
+  Widget _buildTasteEntry() {
+    final artists = musicTaste.value.artists;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            title: const Text(
+              'على ذوقك',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              artists.isEmpty
+                  ? 'اختار نجومك عشان نخصص لك الموسيقى'
+                  : '${artists.length} فنان من اختياراتك',
+            ),
+            trailing: TextButton(
+              onPressed: _openTastePicker,
+              child: const Text('اختار نجومك'),
+            ),
+          ),
+          if (artists.isNotEmpty)
+            SizedBox(
+              height: 54,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: artists.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) => ActionChip(
+                  avatar: const Icon(Icons.person_outline, size: 18),
+                  label: Text(artists[index]),
+                  onPressed: () => context.push(
+                    NavigationManager.artistPath(context, artists[index]),
+                    extra: {'title': artists[index]},
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoriteAlbums(double height) => AsyncLoader<List<dynamic>>(
+    future: _favoriteAlbumsFuture,
+    builder: (context, albums) {
+      if (albums.isEmpty) return const SizedBox.shrink();
+      return Column(
+        children: [
+          const SectionHeader(
+            title: 'ألبومات نجومك',
+            icon: Icons.album_outlined,
+          ),
+          SizedBox(
+            height: height,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: albums.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, index) => GestureDetector(
+                onTap: () => context.push(
+                  NavigationManager.albumPath(
+                    context,
+                    albums[index]['ytid'].toString(),
+                  ),
+                  extra: albums[index],
+                ),
+                child: PlaylistCube(albums[index], size: height),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  Widget _buildNineties() => AsyncLoader<List<dynamic>>(
+    future: _ninetiesFuture,
+    builder: (context, songs) => songs.isEmpty
+        ? const SizedBox.shrink()
+        : RecommendedSongsSection(
+            title: 'فاكر التسعينات؟',
+            songs: songs,
+            listKeyPrefix: 'home_nineties',
+          ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final playlistHeight = MediaQuery.sizeOf(context).height * 0.25 / 1.1;
     return Scaffold(
-      appBar: AppBar(title: const Text('Musify.')),
+      appBar: AppBar(
+        title: const Text('Musify.'),
+        actions: [
+          IconButton(
+            tooltip: 'اختار نجومك',
+            onPressed: _openTastePicker,
+            icon: const Icon(Icons.tune),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: commonSingleChildScrollViewPadding,
         child: Column(
@@ -105,10 +247,13 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
+            _buildTasteEntry(),
+            _buildFavoriteAlbums(playlistHeight),
             _buildSuggestedPlaylists(playlistHeight),
             _buildSuggestedPlaylists(playlistHeight, showOnlyLiked: true),
             _buildCurrentMonthRecapSection(),
             _buildRecommendedSongsSection(),
+            _buildNineties(),
             const MiniPlayerBottomSpace(),
           ],
         ),

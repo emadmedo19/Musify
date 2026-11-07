@@ -1,5 +1,8 @@
 import 'package:musify/main.dart' show logger;
+import 'package:musify/models/music_taste.dart';
+import 'package:musify/services/artist_service.dart';
 import 'package:musify/services/data_manager.dart';
+import 'package:musify/services/music_taste_service.dart';
 import 'package:musify/services/playlists_manager.dart' show onlinePlaylists;
 import 'package:musify/services/proxy_manager.dart' show ytClient;
 import 'package:musify/services/settings_manager.dart' show offlineMode;
@@ -7,7 +10,8 @@ import 'package:musify/utilities/formatter.dart';
 import 'package:musify/utilities/regional_discovery.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
-Future<List<Map>>? _songsInFlight;
+final _songsInFlight = <String, Future<List<Map>>>{};
+String? _songCacheKey;
 List<Map>? _songCache;
 DateTime? _songsLoadedAt;
 
@@ -50,19 +54,25 @@ Future<List<Map>> _cachedSearch(
 }
 
 Future<List<Map>> getRegionalHomeSongs() async {
+  final taste = musicTaste.value;
+  final key = taste.cacheKey;
   if (_songCache != null &&
+      _songCacheKey == key &&
       _songsLoadedAt != null &&
       DateTime.now().difference(_songsLoadedAt!) < const Duration(hours: 6)) {
     return _songCache!;
   }
-  return _songsInFlight ??= _loadRegionalHomeSongs().whenComplete(() {
-    _songsInFlight = null;
-  });
+  return _songsInFlight.putIfAbsent(
+    key,
+    () =>
+        _loadRegionalHomeSongs(taste)
+            .whenComplete(() => _songsInFlight.remove(key)),
+  );
 }
 
-Future<List<Map>> _loadRegionalHomeSongs() async {
+Future<List<Map>> _loadRegionalHomeSongs(MusicTaste taste) async {
   final songs = await loadRegionalDiscovery(
-    regionalSongQueries(),
+    personalizedArtistQueries(taste.artists),
     (query) => _cachedSearch('songs', query, (term) async {
       final results = await ytClient.search.search(term);
       return results.map((video) => returnSongLayout(0, video)).toList();
@@ -70,7 +80,8 @@ Future<List<Map>> _loadRegionalHomeSongs() async {
     perQuery: 8,
     limit: 32,
   );
-  if (songs.isNotEmpty) {
+  if (songs.isNotEmpty && musicTaste.value.cacheKey == taste.cacheKey) {
+    _songCacheKey = taste.cacheKey;
     _songCache = songs;
     _songsLoadedAt = DateTime.now();
   }
@@ -79,7 +90,10 @@ Future<List<Map>> _loadRegionalHomeSongs() async {
 
 Future<List<Map>> getRegionalHomePlaylists({int count = 8}) async {
   final items = await loadRegionalDiscovery(
-    regionalPlaylistQueries,
+    personalizedPlaylistQueries(
+      musicTaste.value.artists,
+      includeNineties: musicTaste.value.includeNineties,
+    ),
     (query) => _cachedSearch('playlists', query, (term) async {
       final results = await ytClient.search.searchContent(
         term,
@@ -110,4 +124,44 @@ Future<List<Map>> getRegionalHomePlaylists({int count = 8}) async {
     ...items.where((p) => ids.add(p['ytid'])),
   ];
   return items;
+}
+
+Future<List<Map>> getFavoriteArtistAlbums() async {
+  final names = [...musicTaste.value.artists]..shuffle();
+  if (names.isEmpty) return [];
+  return loadRegionalDiscovery(
+    names.take(4).toList(),
+    (name) => _cachedSearch('artist_albums', name, (artist) async {
+      final profile = await getArtistProfile(artist, preferredName: artist);
+      return (profile?['releases'] as List? ?? []).whereType<Map>().toList();
+    }),
+    perQuery: 3,
+    limit: 8,
+  );
+}
+
+Future<List<Map>> getNinetiesHomeSongs() async {
+  if (!musicTaste.value.includeNineties) return [];
+  final selected = musicTaste.value.artists;
+  final classicNames = selected
+      .where(
+        (name) => ninetiesSingers.any(
+          (classic) =>
+              normalizeSingerName(classic) == normalizeSingerName(name),
+        ),
+      )
+      .toList();
+  final names = [
+    ...classicNames,
+    ...ninetiesSingers.where((name) => !classicNames.contains(name)),
+  ];
+  return loadRegionalDiscovery(
+    names.take(3).map((name) => '$name أغاني التسعينات').toList(),
+    (query) => _cachedSearch('nineties', query, (term) async {
+      final results = await ytClient.search.search(term);
+      return results.map((video) => returnSongLayout(0, video)).toList();
+    }),
+    perQuery: 4,
+    limit: 9,
+  );
 }

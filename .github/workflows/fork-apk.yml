@@ -39,7 +39,7 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-pub
       - name: Run utility tests
-        run: flutter test --no-pub test/map_utils_test.dart test/sort_utils_test.dart test/media_duration_test.dart test/regional_discovery_test.dart
+        run: flutter test --no-pub test/map_utils_test.dart test/sort_utils_test.dart test/media_duration_test.dart test/regional_discovery_test.dart test/music_taste_test.dart test/music_taste_page_test.dart test/music_taste_storage_test.dart
       - name: Build installable APK
         run: flutter build apk --debug --flavor github --no-pub
       - uses: actions/upload-artifact@v5

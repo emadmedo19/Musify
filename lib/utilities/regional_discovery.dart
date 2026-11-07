@@ -96,3 +96,29 @@ Future<List<Map>> loadRegionalDiscovery(
   );
   return interleaveDiscoveryResults(results, limit);
 }
+
+/// Personalized requests contain only the selected artists; discovery defaults
+/// remain available when the user explicitly skips or clears their selection.
+List<String> personalizedArtistQueries(List<String> artists, {Random? random}) {
+  if (artists.isEmpty) return regionalSongQueries(random: random);
+  final names = [...artists]..shuffle(random ?? Random());
+  return names.take(4).map((name) => '$name official audio').toList();
+}
+
+List<String> personalizedPlaylistQueries(
+  List<String> artists, {
+  bool includeNineties = true,
+  Random? random,
+}) {
+  if (artists.isEmpty) {
+    return [
+      ...regionalPlaylistQueries.take(includeNineties ? 3 : 4),
+      if (includeNineties) 'أغاني التسعينات المصرية والعربية',
+    ];
+  }
+  final names = [...artists]..shuffle(random ?? Random());
+  return [
+    ...names.take(includeNineties ? 3 : 4).map((name) => '$name أغاني'),
+    if (includeNineties) 'أغاني التسعينات المصرية والعربية',
+  ];
+}

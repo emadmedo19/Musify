@@ -35,3 +35,13 @@ Song discovery searches four artists per refresh: Amr Diab, two rotating Egyptia
 When enough regional results are available, at least 10 of 15 home song slots are regional discovery, with up to 5 personal recommendations. Existing favorites/history/custom playlists remain available; global search is unchanged. If regional providers fail, personal recommendations can fill the shelf. The old Top 50 Global seed is no longer used for home recommendations.
 
 Successful discovery searches are cached for six hours; requests are bounded and fail independently. Offline mode uses available cached results without starting new provider searches. A new install without connectivity or cache can have no discovery results; it does not silently substitute the global catalog.
+
+## Choose your artists (10.6.2)
+
+On first opening this version, a local artist picker appears before discovery requests start. It includes a broad, searchable Egyptian/Arab directory with filters for Egyptian, Arab, nineties-era, and selected names. It is not an exhaustive list of all singers: users can add any missing artist name. Selections and the optional nineties shelf are saved in the user database and restored on subsequent launches. Skipping is explicit and remembered; editing is available from **اختار نجومك** on Home.
+
+After saving, Home immediately refreshes artist shortcuts, songs, playlists, and albums using the selected names. Songs/playlists rotate through a bounded subset of favorites; every selected artist remains accessible through a Home shortcut. Album cards come from the existing YouTube Music artist release metadata, not invented album IDs or search thumbnails. The nineties shelf favors selected artists with known nineties catalogs and also includes period discovery queries. The period labels describe search intent; provider results can include later uploads or compilations.
+
+Preferences participate in the song-cache identity, and requests capture their preference snapshot so a previous selection cannot replace a newer selection's in-memory cache. Successful source results are cached; the picker itself works without network access. Individual online sources can fail independently, and an unavailable artist/album does not prevent saving preferences or browsing other shelves.
+
+Verification includes widget tests for selection/search/custom additions, save errors, changing or clearing choices, small screens, landscape and keyboard layouts, plus a real Hive close/reopen persistence test. Live provider content remains dependent on the external service and has not been verified from this workspace's restricted YouTube connection.
