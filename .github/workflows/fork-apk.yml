@@ -3,6 +3,10 @@ name: Build fork APK
 on:
   workflow_dispatch:
     inputs:
+      verified_build_run_id:
+        description: Optional successful unsigned build to sign without rebuilding
+        type: string
+        default: ""
       publish_release:
         description: Publish a signed stable release after all checks pass
         type: boolean
@@ -16,7 +20,17 @@ permissions:
   contents: read
 
 jobs:
+  sign_verified:
+    if: github.event_name == 'workflow_dispatch' && inputs.verified_build_run_id != ''
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/publish-verified-apk.yml
+    with:
+      build_run_id: ${{ inputs.verified_build_run_id }}
+    secrets: inherit
   android:
+    if: inputs.verified_build_run_id == '' || github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     outputs:

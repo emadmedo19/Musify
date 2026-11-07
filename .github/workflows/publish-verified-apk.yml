@@ -1,5 +1,15 @@
 name: Sign and publish a verified APK
 on:
+  workflow_call:
+    inputs:
+      build_run_id:
+        required: true
+        type: string
+    secrets:
+      MUSIFY_KEYSTORE_BASE64:
+        required: true
+      MUSIFY_KEYSTORE_PASSWORD:
+        required: true
   workflow_dispatch:
     inputs:
       build_run_id:

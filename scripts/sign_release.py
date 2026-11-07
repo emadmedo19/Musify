@@ -52,7 +52,8 @@ def main():
             raise RuntimeError('The supplied key does not match the permanent fork certificate')
         run([signer, 'sign', '--ks', str(key), '--ks-key-alias', 'musify-fork', '--ks-pass', 'env:KEYSTORE_PASSWORD', '--v4-signing-enabled', 'false', '--out', str(apk), str(source)])
     verification = run([signer, 'verify', '--print-certs', str(apk)])
-    match = re.search(r'Signer #1 certificate SHA-256 digest:\s*([a-fA-F0-9]{64})', verification)
+    print(verification)  # Public certificate diagnostics; contains no private key.
+    match = re.search(r'certificate SHA-256 digest:\s*([a-fA-F0-9]{64})', verification)
     if not match or match.group(1).lower() != expected:
         raise RuntimeError('Final APK signing identity verification failed')
     badging = run([str(Path(signer).with_name('aapt')), 'dump', 'badging', str(apk)])
