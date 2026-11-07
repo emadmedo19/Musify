@@ -23,6 +23,8 @@ import 'package:audio_service/audio_service.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:musify/main.dart';
+import 'package:musify/utilities/flutter_bottom_sheet.dart';
+import 'package:musify/widgets/discovery_presentation.dart';
 import 'package:musify/widgets/flip_card.dart';
 import 'package:musify/widgets/now_playing/bottom_actions_row.dart';
 import 'package:musify/widgets/now_playing/now_playing_artwork.dart';
@@ -66,6 +68,20 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
             return Column(
               children: [
                 _buildAppBar(context, colorScheme),
+                ValueListenableBuilder<String?>(
+                  valueListenable: audioHandler.playbackProblem,
+                  builder: (context, message, _) => message == null
+                      ? const SizedBox.shrink()
+                      : MaterialBanner(
+                          content: Text(message),
+                          actions: [
+                            TextButton(
+                              onPressed: audioHandler.play,
+                              child: const Text('إعادة المحاولة'),
+                            ),
+                          ],
+                        ),
+                ),
                 Expanded(
                   child: isLargeScreen
                       ? _DesktopLayout(
@@ -97,6 +113,13 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
+          Expanded(
+            child: Text(
+              'بتسمع دلوقتي',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
           IconButton(
             iconSize: 26,
             icon: const Icon(FluentIcons.chevron_down_24_regular),
@@ -237,6 +260,14 @@ class _MobileLayout extends StatelessWidget {
             isLargeScreen: isLargeScreen,
             lyricsController: lyricsController,
           ),
+          if (!isLive && size.height >= 820)
+            PlayerQuickLinks(
+              onLyrics: lyricsController.flipcard,
+              onQueue: () => showCustomBottomSheet(
+                context,
+                const QueueWidget(isBottomSheet: true),
+              ),
+            ),
           const SizedBox(height: 16),
         ],
       ),

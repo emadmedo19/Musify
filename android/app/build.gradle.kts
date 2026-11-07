@@ -48,7 +48,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.gokadzev.musify"
+        applicationId = "com.emadmedo19.musify"
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
@@ -71,7 +71,7 @@ android {
     signingConfigs {
         create("release") {
             // From decoded key
-            storeFile = file("key.jks")
+            storeFile = file(keystoreProperties.getProperty("storeFile", "key.jks"))
 
             // From key.properties
             keyAlias = keystoreProperties["keyAlias"] as String?
@@ -93,7 +93,7 @@ android {
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists()) signingConfigs.getByName("release") else null
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

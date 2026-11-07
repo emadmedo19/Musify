@@ -1,0 +1,457 @@
+{
+  "@@locale": "ar",
+  "about": "حول التطبيق",
+  "accentChangeMsg": "تم تغيير لون التمييز",
+  "accentColor": "لون التمييز",
+  "add": "إضافة",
+  "addPlaylist": "إضافة قائمة تشغيل",
+  "addToLikedPlaylists": "إضافة للقوائم المفضلة",
+  "addToLikedSongs": "إضافة للأغاني المفضلة",
+  "addToPlaylist": "إضافة لقائمة تشغيل",
+  "addToQueue": "إضافة لقائمة الانتظار",
+  "addedPlaylists": "القوائم المضافة",
+  "addedSuccess": "تمت الإضافة",
+  "addedToLikedSongs": "تمت الإضافة للمفضلة",
+  "album": "ألبوم",
+  "albums": "الألبومات",
+  "allSongs": "كل الأغاني",
+  "alreadyDownloading": "التحميل جارٍ بالفعل",
+  "annualRecap": "حصاد السنة",
+  "appUpdateIsAvailable": "يوجد تحديث جديد",
+  "artist": "الفنان",
+  "artistNotFound": "لم نعثر على الفنان. جرّب مرة أخرى.",
+  "artists": "الفنانون",
+  "audioQuality": "جودة الصوت",
+  "audioQualityBadge": "إظهار جودة الصوت",
+  "audioQualityBadgeDescription": "عرض معدل البت وصيغة الصوت فوق غلاف الأغنية.",
+  "audioQualityHigh": "عالية",
+  "audioQualityLow": "منخفضة",
+  "audioQualityMedium": "متوسطة",
+  "audioQualityMsg": "تم تغيير جودة الصوت",
+  "automaticSongPicker": "تشغيل أغنية تلقائيًا",
+  "automaticSongPickerDescription": "تشغيل أغنية أخرى عند انتهاء قائمة الانتظار.",
+  "automaticUpdateChecks": "فحص التحديثات تلقائيًا",
+  "automaticUpdateChecksDescription": "فحص تحديثات التطبيق عند فتحه.",
+  "back": "رجوع",
+  "backToFavorites": "ارجع لمفضلاتك",
+  "backedupSuccess": "تم حفظ النسخة الاحتياطية",
+  "backupError": "تعذّر إنشاء النسخة الاحتياطية",
+  "backupUserData": "نسخ بياناتي احتياطيًا",
+  "becomeSponsor": "دعم المشروع",
+  "cacheMsg": "تم مسح الملفات المؤقتة",
+  "cancel": "إلغاء",
+  "cancellingDownload": "جارٍ إلغاء التحميل…",
+  "checkForUpdates": "هل تريد فحص التحديثات؟",
+  "chooseBackupDir": "اختر مجلد النسخة الاحتياطية",
+  "chooseBackupFiles": "اختر ملفات النسخ الاحتياطي",
+  "chooseCsvFile": "اختر ملف CSV",
+  "clear": "مسح",
+  "clearCache": "مسح الملفات المؤقتة",
+  "clearListeningStats": "مسح إحصاءات الاستماع",
+  "clearListeningStatsQuestion": "سيتم حذف إحصاءات الاستماع المحفوظة على هذا الجهاز. هل تريد المتابعة؟",
+  "clearQueue": "مسح قائمة الانتظار",
+  "clearQueueQuestion": "هل تريد مسح قائمة الانتظار؟",
+  "clearRecentlyPlayed": "مسح سجل الاستماع",
+  "clearRecentlyPlayedQuestion": "هل تريد مسح الأغاني التي سمعتها مؤخرًا؟",
+  "clearSearchHistory": "مسح سجل البحث",
+  "clearSearchHistoryQuestion": "هل تريد مسح سجل البحث؟",
+  "confirm": "تأكيد",
+  "confirmation": "تأكيد",
+  "copy": "نسخ",
+  "copyLogs": "نسخ سجل الأخطاء",
+  "copyLogsNoLogs": "لا يوجد سجل لنسخه",
+  "copyLogsSuccess": "تم نسخ السجل",
+  "create": "إنشاء",
+  "createFolder": "إنشاء مجلد",
+  "custom": "مخصص",
+  "customPlaylistImgUrl": "رابط صورة القائمة",
+  "customPlaylistName": "اسم قائمة التشغيل",
+  "customPlaylists": "قوائمي",
+  "dateAdded": "تاريخ الإضافة",
+  "default_": "الافتراضي",
+  "delete": "حذف",
+  "deleteDownloads": "حذف التحميلات",
+  "deleteDownloadsQuestion": "هل تريد حذف كل الأغاني المحمّلة؟",
+  "deleteFolder": "حذف المجلد",
+  "deleteFolderQuestion": "هل تريد حذف المجلد؟ ستُنقل قوائمه إلى المكتبة الرئيسية.",
+  "deletePlaylist": "حذف قائمة التشغيل",
+  "download": "تحميل",
+  "downloadAppUpdate": "فحص تحديث التطبيق",
+  "downloadCancelled": "تم إلغاء التحميل",
+  "downloadFailed": "تعذّر التحميل",
+  "downloadPlaylist": "تحميل قائمة التشغيل",
+  "downloadsDeleted": "تم حذف التحميلات",
+  "dynamicColor": "ألوان النظام — أندرويد 12 فأحدث",
+  "dynamicColorDescription": "استخدام ألوان خلفية جهازك في التطبيق.",
+  "editFolder": "تعديل المجلد",
+  "editPlaylist": "تعديل قائمة التشغيل",
+  "emptyFolderMsg": "المجلد فارغ. أضف قوائم لتنظيم موسيقاك.",
+  "enableUpdateChecksDescription": "هل تريد أن يفحص Musify تحديثات مستودعك تلقائيًا؟ يمكنك فحصها يدويًا من الإعدادات.",
+  "endOfSong": "بعد انتهاء الأغنية",
+  "enterFolderName": "اكتب اسم المجلد",
+  "enterPlaylistName": "اكتب اسم قائمة التشغيل",
+  "equalizer": "معادل الصوت",
+  "equalizerAndroidOnly": "معادل الصوت متاح على أندرويد فقط.",
+  "equalizerBands": "نطاقات الصوت",
+  "equalizerDisabledHint": "تعديلات نطاقات الصوت متوقفة.",
+  "equalizerEnable": "تفعيل معادل الصوت",
+  "equalizerEnabledHint": "تعديلات نطاقات الصوت مفعّلة.",
+  "equalizerInitFailed": "تعذّر تشغيل معادل الصوت. شغّل أغنية ثم افتحه مرة أخرى.",
+  "equalizerPresetBalanced": "متوازن",
+  "equalizerPresetBassBoost": "تعزيز الجهير",
+  "equalizerPresetElectronic": "إلكتروني",
+  "equalizerPresetPop": "بوب",
+  "equalizerPresetRock": "روك",
+  "equalizerPresetTrebleBoost": "تعزيز الصوت الحاد",
+  "equalizerPresetVocal": "وضوح الصوت البشري",
+  "equalizerPresets": "إعدادات جاهزة",
+  "equalizerResetBands": "إعادة ضبط النطاقات",
+  "error": "حصل خطأ. جرّب مرة أخرى أو راجع سجل الأخطاء.",
+  "externalRecommendations": "اقتراحات من ذوق الاستماع",
+  "externalRecommendationsDescription": "استخدم الأغاني التي سمعتها لتوسيع اقتراحاتك الشخصية.",
+  "failedPlayingRadio": "تعذّر تشغيل محطة الراديو",
+  "failedToLoadPlaylist": "تعذّر تحميل قائمة التشغيل",
+  "fieldsNotEmpty": "أكمل كل الحقول",
+  "folderAlreadyExists": "يوجد مجلد بهذا الاسم",
+  "folderDeleted": "تم حذف المجلد",
+  "folderName": "اسم المجلد",
+  "folderUpdated": "تم تعديل المجلد",
+  "goToArtist": "افتح صفحة الفنان",
+  "home": "الرئيسية",
+  "hours": "ساعات",
+  "imagePicked": "تم اختيار الصورة",
+  "importPlaylist": "استيراد قائمة تشغيل",
+  "importSpotifyPlaylist": "استيراد قائمة من Spotify",
+  "importSpotifyPlaylistInstructions": "صدّر قائمة Spotify بصيغة CSV من chosic.com/spotify-playlist-exporter/ ثم اختر الملف أو الصق محتواه. سيبحث Musify عن كل أغنية على YouTube.",
+  "importSpotifyPlaylistTitle": "استيراد قائمة Spotify",
+  "invalidYouTubePlaylist": "قائمة YouTube غير صالحة",
+  "language": "اللغة",
+  "languageDe": "الألمانية",
+  "languageEl": "اليونانية",
+  "languageEn": "الإنجليزية",
+  "languageEs": "الإسبانية",
+  "languageEt": "الإستونية",
+  "languageFr": "الفرنسية",
+  "languageHe": "العبرية",
+  "languageHi": "الهندية",
+  "languageHu": "المجرية",
+  "languageId": "الإندونيسية",
+  "languageIt": "الإيطالية",
+  "languageJa": "اليابانية",
+  "languageKo": "الكورية",
+  "languageMsg": "تم تغيير اللغة",
+  "languagePl": "البولندية",
+  "languagePt": "البرتغالية",
+  "languageRu": "الروسية",
+  "languageSv": "السويدية",
+  "languageTa": "التاميلية",
+  "languageTr": "التركية",
+  "languageUk": "الأوكرانية",
+  "languageZh": "الصينية المبسطة",
+  "languageZhHant": "الصينية التقليدية",
+  "library": "مكتبتي",
+  "licenses": "التراخيص",
+  "likedPlaylists": "قوائمي المفضلة",
+  "likedSongs": "أغاني أعجبتني",
+  "linkCopied": "تم نسخ رابط القائمة",
+  "listeningStats": "إحصاءات الاستماع",
+  "listeningStatsCleared": "تم مسح إحصاءات الاستماع",
+  "listeningStatsDescription": "احفظ إحصاءات الاستماع محليًا لعرض حصاد الشهر والسنة.",
+  "loading": "جارٍ التحميل",
+  "lyrics": "كلمات الأغنية",
+  "lyricsNotAvailable": "كلمات الأغنية غير متاحة",
+  "makeOffline": "إتاحة بدون إنترنت",
+  "minutes": "دقائق",
+  "minutesListened": "دقيقة استماع",
+  "monthlyListeners": "مستمع شهريًا",
+  "moreOptions": "خيارات أخرى",
+  "mostPlayed": "الأكثر استماعًا",
+  "moveToFolder": "نقل إلى مجلد",
+  "name": "الاسم",
+  "newAnnouncement": "إعلان جديد",
+  "newFolder": "مجلد جديد",
+  "no": "لا",
+  "noCustomPlaylists": "لم تنشئ قوائم تشغيل بعد",
+  "noFolders": "لم تنشئ مجلدات بعد",
+  "noListeningStats": "لا توجد إحصاءات استماع بعد",
+  "noOfflineLibraryContent": "لا توجد موسيقى محفوظة بدون إنترنت. فعّل الاتصال أو حمّل أغاني وقوائم أولًا.",
+  "noPlaylistsAdded": "لم تضف قوائم بعد",
+  "noRadioStations": "لا توجد محطات راديو متاحة",
+  "noSongsInPlaylist": "القائمة لا تحتوي على أغاني",
+  "noSongsInQueue": "قائمة الانتظار فارغة",
+  "notYTlist": "معرّف قائمة YouTube غير صالح",
+  "offlineMode": "بدون إنترنت",
+  "offlineModeDescription": "إيقاف المزايا المتصلة واستخدام الموسيقى المحفوظة فقط.",
+  "offlinePlaylists": "قوائم محمّلة",
+  "offlineSongs": "أغاني محمّلة",
+  "openChosicExporter": "افتح أداة تصدير Spotify",
+  "others": "أخرى",
+  "pasteCsv": "الصق محتوى CSV",
+  "pause": "إيقاف مؤقت",
+  "pickImageFromDevice": "اختيار صورة من الجهاز",
+  "pinToLibrary": "تثبيت في المكتبة",
+  "pinnedPlaylists": "المثبّتة",
+  "pinnedPlaylistsLimit": "يمكنك تثبيت 5 قوائم أو ألبومات كحد أقصى",
+  "play": "تشغيل",
+  "playNext": "تشغيل بعد الحالية",
+  "playlist": "قائمة تشغيل",
+  "playlistAlreadyDownloaded": "القائمة محمّلة بالفعل",
+  "playlistAlreadyExists": "القائمة موجودة بالفعل",
+  "playlistDownloaded": "تم تحميل القائمة",
+  "playlistEmpty": "قائمة التشغيل فارغة",
+  "playlistFolders": "مجلدات القوائم",
+  "playlistName": "اسم القائمة",
+  "playlistRemovedFromOffline": "تم حذف القائمة من التخزين بدون إنترنت",
+  "playlistUpdated": "تم تحديث القائمة",
+  "playlists": "قوائم التشغيل",
+  "preferences": "تفضيلاتي",
+  "provideIdOrNameError": "أدخل معرّف YouTube أو اسم قائمة مخصصة",
+  "pureBlackTheme": "أسود خالص",
+  "pureBlackThemeDescription": "خلفية سوداء بالكامل في الوضع الداكن لشاشات OLED.",
+  "queue": "التالي في القائمة",
+  "radioStations": "محطات الراديو",
+  "recentlyPlayed": "سمعتها مؤخرًا",
+  "recentlyPlayedMsg": "تم مسح سجل الاستماع",
+  "recommendedForYou": "اختيارات على ذوقك",
+  "recommendedSongs": "أغاني مقترحة",
+  "remove": "إزالة",
+  "removeFromFolder": "إزالة من المجلد",
+  "removeFromLikedPlaylists": "إزالة من القوائم المفضلة",
+  "removeFromLikedSongs": "إزالة من الأغاني المفضلة",
+  "removeFromPlaylist": "إزالة من القائمة",
+  "removeFromRecentlyPlayed": "إزالة من سجل الاستماع",
+  "removeOffline": "إزالة النسخة المحمّلة",
+  "removeOfflinePlaylist": "إزالة القائمة المحمّلة",
+  "removeOfflinePlaylistConfirm": "ستُحذف القائمة من التخزين بدون إنترنت. ستظل الأغاني المستخدمة في قوائم أخرى متاحة.",
+  "removePlaylistQuestion": "هل تريد إزالة هذه القائمة؟",
+  "removeSearchQueryQuestion": "هل تريد إزالة عملية البحث هذه؟",
+  "removedFromLikedSongs": "تمت الإزالة من المفضلة",
+  "renameSong": "تغيير اسم الأغنية",
+  "repeat": "تكرار",
+  "replay": "تشغيل مرة أخرى",
+  "restoreError": "تعذّر استعادة البيانات",
+  "restoreUserData": "استعادة بياناتي",
+  "restoredSuccess": "تمت استعادة البيانات",
+  "search": "البحث",
+  "searchHistoryMsg": "تم مسح سجل البحث",
+  "selectDuration": "اختر المدة",
+  "setTimer": "ضبط المؤقت",
+  "settingChangedMsg": "تم حفظ الإعدادات",
+  "settings": "الإعدادات",
+  "share": "مشاركة",
+  "shareRecap": "مشاركة الحصاد",
+  "shareTimeMachineText": "حصادي الموسيقي في Musify",
+  "shuffle": "تشغيل عشوائي",
+  "single": "أغنية منفردة",
+  "singlesAndEps": "الأغاني المنفردة والألبومات القصيرة",
+  "skipToNext": "الأغنية التالية",
+  "skipToPrevious": "الأغنية السابقة",
+  "sleepTimer": "مؤقت النوم",
+  "sleepTimerCancelled": "تم إلغاء مؤقت النوم",
+  "sleepTimerSet": "تم ضبط مؤقت النوم",
+  "songAdded": "تمت إضافة الأغنية",
+  "songAddedToOffline": "الأغنية متاحة الآن بدون إنترنت",
+  "songAlreadyInPlaylist": "الأغنية موجودة في القائمة بالفعل",
+  "songInfoCopied": "تم نسخ بيانات الأغنية",
+  "songRemoved": "تمت إزالة الأغنية",
+  "songRemovedFromOffline": "تم حذف النسخة المحمّلة من الأغنية",
+  "songs": "الأغاني",
+  "sponsorBlockDescription": "تخطّي فقرات الرعاية في المقاطع المدعومة.",
+  "sponsorProject": "ادعم المشروع",
+  "spotifyCsvHint": "الصق محتوى CSV هنا",
+  "spotifyPlaylistAlreadyImporting": "يوجد استيراد جارٍ بالفعل",
+  "spotifyPlaylistEmpty": "اختر ملف CSV أو الصق محتواه أولًا",
+  "spotifyPlaylistImportFailed": "تعذّر استيراد القائمة",
+  "spotifyPlaylistImportResult": "تم استيراد {found} من {total} أغنية",
+  "spotifyPlaylistImporting": "جارٍ استيراد القائمة…",
+  "spotifyPlaylistInvalid": "ملف CSV لا يحتوي على عمودَي الأغنية والفنان",
+  "spotifyPlaylistMissingSongs": "أغاني لم نعثر عليها",
+  "spotifyPlaylistNameHint": "قائمة مستوردة من Spotify",
+  "spotifyPlaylistProgress": "جارٍ البحث عن {done} من {total}",
+  "suggestedArtists": "فنانين ممكن يعجبوك",
+  "suggestedPlaylists": "قوائم على ذوقك",
+  "syncAllNow": "زامن الآن",
+  "syncAllNowDescription": "{count, plural, =1{مع الجهاز المقترن المتصل} other{مع {count} أجهزة مقترنة متصلة}}",
+  "syncNow": "مزامنة",
+  "syncOnline": "{address} · متصل",
+  "syncSyncedAll": "تمت المزامنة مع أجهزتك",
+  "syncThisDevice": "هذا الجهاز",
+  "syncTitle": "مزامنة محلية",
+  "syncData": "اختر البيانات للمزامنة",
+  "syncSelections": "تتبادل الأجهزة الفئات المحددة على الجهازين فقط. تبقى الإعدادات والملفات المحمّلة على كل جهاز.",
+  "syncFavourites": "الأغاني المفضلة",
+  "syncPlaylists": "القوائم والمجلدات والمثبّتات",
+  "syncRecent": "سجل الاستماع",
+  "syncRecap": "حصاد الاستماع",
+  "syncSearches": "سجل البحث",
+  "syncRadio": "محطات الراديو المفضلة",
+  "syncPairTitle": "اقتران بهذا الجهاز؟",
+  "syncPinInstructions": "أدخل رمز PIN المكوّن من ستة أرقام الظاهر على الجهاز الآخر.",
+  "syncPairDescription": "يريد {device} الاقتران. اكتب هذا الرمز عليه؛ ألغِ الطلب إن لم تبدأه بنفسك.",
+  "syncUnchanged": "لا توجد تغييرات في البيانات المحددة.",
+  "syncOverNetwork": "المزامنة عبر الشبكة المحلية",
+  "syncOffDescription": "زامن مكتبتك وحصادك بين أجهزتك عبر Wi-Fi، بدون حساب أو خادم سحابي.",
+  "syncDevices": "الأجهزة",
+  "syncFindDevices": "ابحث عن أجهزتك على الشبكة واقترن بها.",
+  "syncLastSynced": "آخر مزامنة: {time}",
+  "syncAutomatic": "مزامنة تلقائية",
+  "syncAutomaticDescription": "مع الأجهزة المقترنة المتصلة: عند الفتح وبعد التغييرات وكل 30 دقيقة.",
+  "syncCouldNotStart": "تعذّر بدء المزامنة المحلية",
+  "syncIsOff": "فعّل المزامنة ليظهر هذا الجهاز لأجهزتك على الشبكة نفسها.",
+  "syncVisible": "هذا الجهاز ظاهر لأجهزتك على الشبكة نفسها.",
+  "syncNotVisible": "الجهاز غير ظاهر حاليًا. تعذّر بدء المزامنة.",
+  "syncScanAgain": "إعادة البحث",
+  "syncScanning": "جارٍ البحث عن أجهزة على الشبكة…",
+  "syncConnecting": "جارٍ الاتصال…",
+  "syncPreparing": "جارٍ تجهيز مكتبتك…",
+  "syncSending": "جارٍ إرسال البيانات للجهاز الآخر…",
+  "syncMerging": "جارٍ دمج البيانات المستلمة…",
+  "syncSyncingWith": "جارٍ المزامنة مع {device}",
+  "syncSyncedWith": "تمت المزامنة مع {device}",
+  "syncPairWith": "اقتران بـ {device}",
+  "syncPairedWith": "مقترن بـ {device}",
+  "syncPair": "اقتران",
+  "syncDone": "تم",
+  "syncOfflineDevice": "غير متصل",
+  "syncNoDevices": "لم نعثر على جهاز Musify آخر. فعّل المزامنة على الجهاز الآخر وتأكد من اتصال الجهازين بالشبكة نفسها.",
+  "syncForget": "إلغاء الاقتران",
+  "syncForgetConfirm": "هل تريد إلغاء الاقتران بـ {device}؟ سيحتاج الجهازان إلى رمز PIN جديد للاقتران لاحقًا.",
+  "syncForgetAll": "إلغاء اقتران كل الأجهزة",
+  "syncForgetAllConfirm": "هل تريد إلغاء اقتران كل الأجهزة؟ ستحتاج إلى رمز PIN لكل جهاز مرة أخرى.",
+  "syncErrorNotRunning": "فعّل المزامنة المحلية على هذا الجهاز أولًا.",
+  "syncErrorIncorrectPin": "رمز PIN غير صحيح. راجع الرمز على {device}.",
+  "syncErrorRejected": "رفض {device} طلب الاقتران.",
+  "syncErrorBusy": "الجهاز {device} مشغول بطلب اقتران آخر. انتظر قليلًا ثم أعد المحاولة.",
+  "syncErrorUntrusted": "الجهاز {device} لم يعد يثق بهذا الجهاز. ألغِ الاقتران ثم اقترن من جديد.",
+  "syncErrorUpdate": "حدّث Musify على الجهازين لاستخدام المزامنة المحلية.",
+  "syncErrorNoCategories": "اختر فئة واحدة على الأقل تكون مفعّلة على الجهازين.",
+  "syncErrorTooLarge": "البيانات المحددة كبيرة جدًا. اختر فئات أقل.",
+  "syncErrorUnreachable": "تعذّر الاتصال بـ {device}. بياناتك محفوظة؛ تأكد من اتصال الجهازين بالشبكة نفسها.",
+  "syncErrorFailed": "تعذّرت المزامنة مع {device}. حاول مرة أخرى.",
+  "@syncAllNowDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@syncOnline": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncPairDescription": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncSyncingWith": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncSyncedWith": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncPairWith": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncPairedWith": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncForgetConfirm": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncErrorIncorrectPin": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncErrorRejected": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncErrorBusy": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncErrorUntrusted": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncErrorUnreachable": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncErrorFailed": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "syncedLyrics": "كلمات متزامنة",
+  "syncedLyricsDescription": "تمييز السطر الحالي والتمرير مع الأغنية عند توفر كلمات مؤقتة.",
+  "tapToView": "اضغط للعرض",
+  "themeMode": "المظهر",
+  "themeModeDark": "داكن",
+  "themeModeLight": "فاتح",
+  "themeModeSystem": "حسب النظام",
+  "timeMachine": "حصاد استماعك",
+  "tools": "الأدوات",
+  "topSongs": "الأغاني الأشهر",
+  "translate": "المساعدة في الترجمة",
+  "translateDescription": "ساعد في ترجمة Musify إلى لغتك عبر Crowdin.",
+  "understand": "فهمت",
+  "undo": "تراجع",
+  "unpinFromLibrary": "إلغاء التثبيت من المكتبة",
+  "update": "تحديث",
+  "useProxy": "استخدام وسيط اتصال",
+  "useProxyDescription": "استخدم الوسيط عند فشل البث فقط؛ تشغيله دون حاجة قد يعطّل الصوت.",
+  "userPlaylists": "قوائمي",
+  "yes": "نعم",
+  "youtubePlaylistLinkOrId": "رابط قائمة YouTube أو معرّفها"
+}

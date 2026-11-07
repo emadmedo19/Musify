@@ -29,18 +29,20 @@ import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 import 'package:musify/constants/clients.dart';
 import 'package:musify/main.dart' show logger;
+import 'package:musify/models/discovery_feedback.dart';
 import 'package:musify/services/data_manager.dart';
+import 'package:musify/services/discovery_feedback_service.dart';
 import 'package:musify/services/io_service.dart';
 import 'package:musify/services/lyrics_manager.dart';
 import 'package:musify/services/playlists_manager.dart';
 import 'package:musify/services/proxy_manager.dart';
+import 'package:musify/services/regional_discovery_service.dart';
 import 'package:musify/services/settings_manager.dart';
 import 'package:musify/utilities/app_utils.dart';
 import 'package:musify/utilities/formatter.dart';
 import 'package:musify/utilities/map_utils.dart';
+import 'package:musify/utilities/regional_discovery.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-
-List globalSongs = [];
 
 ValueNotifier<List> userLikedSongsList = ValueNotifier<List>(
   Hive.box('user').get('likedSongs', defaultValue: []),
@@ -192,11 +194,44 @@ Future<List> fetchSongsList(String searchQuery) async {
 
 Future<List> getRecommendedSongs() async {
   try {
-    if (externalRecommendations.value && userRecentlyPlayed.value.isNotEmpty) {
-      return await _getRecommendationsFromRecentlyPlayed();
-    } else {
-      return await _getRecommendationsFromMixedSources();
-    }
+    final regionalFuture = getRegionalHomeSongs();
+    final personalFuture =
+        externalRecommendations.value && userRecentlyPlayed.value.isNotEmpty
+        ? _getRecommendationsFromRecentlyPlayed()
+        : _getRecommendationsFromMixedSources();
+    final safePersonal = personalFuture
+        .timeout(const Duration(seconds: 15), onTimeout: () => <dynamic>[])
+        .catchError((Object error, StackTrace stackTrace) {
+          logger.log(
+            'Personal recommendations failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return <dynamic>[];
+        });
+    final results = await Future.wait([regionalFuture, safePersonal]);
+    final recentIds = userRecentlyPlayed.value
+        .whereType<Map>()
+        .map((s) => s['ytid']?.toString())
+        .whereType<String>()
+        .toSet();
+    final feedback = discoveryFeedback.value;
+    final regional = rankDiscoverySongs(
+      results[0],
+      feedback,
+      recentlyPlayed: recentIds,
+      limit: 32,
+    );
+    final personal = rankDiscoverySongs(
+      results[1],
+      feedback,
+      recentlyPlayed: recentIds,
+    );
+    return rankDiscoverySongs(
+      blendRegionalRecommendations(regional, personal),
+      feedback,
+      recentlyPlayed: recentIds,
+    );
   } catch (e, stackTrace) {
     logger.log(
       'Error in getRecommendedSongs',
@@ -253,7 +288,10 @@ Future<List> _getRecommendationsFromSeedSongs(List seedSongs) async {
 
   final sorted = scores.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
-  return sorted.take(15).map((e) => songMap[e.key]!).toList();
+  return rankDiscoverySongs(
+    sorted.map((e) => songMap[e.key]!),
+    discoveryFeedback.value,
+  );
 }
 
 /// Number of playlist tracks used to seed recommendations while keeping network cost bounded.
@@ -275,7 +313,7 @@ Future<List> getRecommendedSongsForPlaylist(
 
     final cached = _playlistRecommendationsCache[playlistId];
     if (cached != null) {
-      final stillFresh = cached
+      final stillFresh = rankDiscoverySongs(cached, discoveryFeedback.value)
           .where((song) => !existingIds.contains(song['ytid']?.toString()))
           .toList();
       if (stillFresh.isNotEmpty) return stillFresh;
@@ -327,12 +365,6 @@ Future<List> _getRecommendationsFromMixedSources() async {
     userLikedSongsList.value,
     userRecentlyPlayed.value,
   ];
-
-  if (globalSongs.isEmpty) {
-    const playlistId = 'PLgzTt0k8mXzEk586ze4BjvDXR7c-TUSnx';
-    globalSongs = await getSongsFromPlaylist(playlistId);
-  }
-  recommendationSources.add(globalSongs.take(10));
 
   if (userCustomPlaylists.value.isNotEmpty) {
     for (final userPlaylist in userCustomPlaylists.value) {
@@ -641,12 +673,17 @@ Future<Map<String, dynamic>?> getSimilarSong(
     final song = await ytClient.videos.get(songYtId);
     final relatedSongs = await ytClient.videos.getRelatedVideos(song) ?? [];
 
-    for (final video in relatedSongs) {
-      final candidate = returnSongLayout(0, video);
-      if (!excludedYtIds.contains(candidate['ytid']?.toString())) {
-        return candidate;
-      }
-    }
+    final candidates = rankDiscoverySongs(
+      relatedSongs
+          .map((video) => returnSongLayout(0, video))
+          .where(
+            (candidate) =>
+                !excludedYtIds.contains(candidate['ytid']?.toString()),
+          ),
+      discoveryFeedback.value,
+    );
+    if (candidates.isNotEmpty)
+      return Map<String, dynamic>.from(candidates.first);
     logger.log('No new related songs found for $songYtId');
   } catch (e, stackTrace) {
     logger.log(

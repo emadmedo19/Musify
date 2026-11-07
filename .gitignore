@@ -50,3 +50,8 @@ lib/localization/app_*.dart
 
 # Generated untranslated messages file
 lib/localization/untranslated.json
+
+# Private release signing materials
+**/*.p12
+**/KEYSTORE_PASSWORD.txt
+**/KEYSTORE_BASE64.txt

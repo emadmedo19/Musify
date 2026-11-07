@@ -1,0 +1,142 @@
+name: Build fork APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      verified_build_run_id:
+        description: Optional successful unsigned build to sign without rebuilding
+        type: string
+        default: ""
+      publish_release:
+        description: Publish a signed stable release after all checks pass
+        type: boolean
+        default: false
+  push:
+    branches: [build/fork-apk]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  sign_verified:
+    if: github.event_name == 'workflow_dispatch' && inputs.verified_build_run_id != ''
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/publish-verified-apk.yml
+    with:
+      build_run_id: ${{ inputs.verified_build_run_id }}
+    secrets: inherit
+  android:
+    if: inputs.verified_build_run_id == '' || github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      signed: ${{ steps.signing.outputs.configured }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Resolve required Flutter version
+        id: flutter
+        shell: bash
+        run: |
+          version=$(sed -n 's/^  flutter: \^*//p' pubspec.yaml)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Resolve application version
+        id: release
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version: \([0-9.]*\)+.*/\1/p' pubspec.yaml)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ steps.flutter.outputs.version }}
+          cache: true
+      - name: Cache Gradle downloads
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-musify-gradle-${{ hashFiles('android/**/*.gradle*', 'pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-musify-gradle-
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Generate localizations
+        run: flutter gen-l10n
+      - name: Analyze
+        run: flutter analyze --no-pub
+      - name: Run utility tests
+        run: flutter test --no-pub test/map_utils_test.dart test/sort_utils_test.dart test/media_duration_test.dart test/regional_discovery_test.dart test/music_taste_test.dart test/music_taste_page_test.dart test/music_taste_storage_test.dart test/fork_updates_test.dart test/playback_recovery_test.dart test/discovery_feedback_test.dart test/discovery_feedback_storage_test.dart test/arabic_localization_test.dart test/discovery_presentation_test.dart
+      - name: Prepare private release signing when configured
+        id: signing
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MUSIFY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MUSIFY_KEYSTORE_PASSWORD }}
+          REQUEST_PUBLISH: ${{ inputs.publish_release || false }}
+        shell: bash
+        run: |
+          if [[ -n "$KEYSTORE_BASE64" && -n "$KEYSTORE_PASSWORD" ]]; then
+            umask 077
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/musify-release.p12"
+            certificate=$(keytool -exportcert -alias musify-fork -keystore "$RUNNER_TEMP/musify-release.p12" -storepass:env KEYSTORE_PASSWORD | sha256sum | cut -d ' ' -f 1)
+            test "$certificate" = "$(cat android/fork-signing-certificate.sha256)"
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            if [[ "$REQUEST_PUBLISH" == 'true' ]]; then echo 'Configure the private signing secrets before publishing.'; exit 1; fi
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo 'Release signing secrets are absent. The release APK must be signed privately before installation.'
+          fi
+      - name: Build release APK
+        run: flutter build apk --release --flavor github --no-pub
+      - name: Stage signed APK
+        if: steps.signing.outputs.configured == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MUSIFY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MUSIFY_KEYSTORE_PASSWORD }}
+        run: python3 scripts/sign_release.py build/app/outputs/flutter-apk/app-github-release.apk build/distribution
+      - name: Stage unsigned APK for private signing
+        if: steps.signing.outputs.configured != 'true'
+        run: |
+          mkdir -p build/distribution
+          cp build/app/outputs/flutter-apk/app-github-release.apk build/distribution/Musify-UNSIGNED.apk
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.signing.outputs.configured == 'true' && 'Musify-signed-release' || 'Musify-unsigned-for-private-signing' }}
+          path: build/distribution/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove signing material
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/musify-release.p12"
+
+  publish:
+    needs: android
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release && needs.android.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: Musify-signed-release
+          path: distribution
+      - name: Publish the verified signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.android.outputs.version }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: bash .github/scripts/publish_fork_release.sh
