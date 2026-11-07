@@ -1,9 +1,40 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:musify/localization/app_localizations.dart';
 import 'package:musify/models/music_taste.dart';
 import 'package:musify/screens/music_taste_page.dart';
 
 void main() {
+  testWidgets('picker uses the production Arabic Material UI host and theme', (
+    tester,
+  ) async {
+    final theme = ThemeData.dark();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        locale: const Locale('ar'),
+        supportedLocales: const [Locale('ar')],
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
+        home: MusicTastePage(initial: MusicTaste(), onSave: (_) async {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final context = tester.element(find.byType(TextField));
+    expect(Directionality.of(context), TextDirection.rtl);
+    expect(Theme.of(context).brightness, Brightness.dark);
+    expect(Localizations.localeOf(context), const Locale('ar'));
+    expect(MaterialLocalizations.of(context), isNotNull);
+    await tester.enterText(find.byType(TextField), 'عمرو دياب');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(Card, 'عمرو دياب'));
+    await tester.pump();
+    expect(find.text('حفظ اختياراتي (1)'), findsOneWidget);
+    expect(find.byType(ErrorWidget), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'search, choose and save selected artists without a network request',
     (tester) async {

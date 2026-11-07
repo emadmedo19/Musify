@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class DiscoveryWelcome extends StatelessWidget {
   const DiscoveryWelcome({super.key, required this.onEdit});

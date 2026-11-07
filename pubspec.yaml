@@ -5,7 +5,7 @@ repository: https://github.com/emadmedo19/Musify
 issue_tracker: https://github.com/emadmedo19/Musify/issues
 
 publish_to: 'none'
-version: 10.7.0+189 # run update.sh after changing the version
+version: 10.7.1+190 # run update.sh after changing the version
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
