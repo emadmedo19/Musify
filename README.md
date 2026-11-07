@@ -1,3 +1,7 @@
+> **نسخة Musify العربية:** واجهة عربية، اختيارات فنانين محفوظة، اقتراحات مصرية وعربية وتسعينات، وتحديثات موقّعة من هذا المستودع. [تحميل آخر إصدار](https://github.com/emadmedo19/Musify/releases/latest) · [دليل البناء والتوقيع ونقل البيانات](docs/FORK_BUILD.md).
+>
+> الإصدار الموقّع يستخدم حزمة مستقلة `com.emadmedo19.musify` ويمكن تثبيته بجانب النسخة التجريبية. صدّر بياناتك من القديمة واستوردها في الجديدة؛ لا يلزم حذف القديمة قبل إتمام النقل.
+
 <div align="center">
 <img src="https://github.com/gokadzev/Musify/raw/master/.github/assets/Musify-banner.png" width="100%">
 
@@ -69,7 +73,7 @@ Material UI & accent colors & dynamic colors (Android 12+) <br/>
 ## Download
 
 
-[<img src="https://github.com/gokadzev/Musify/raw/master/.github/assets/get-it-on-github.png" alt="Get it on Github" height="80">](https://github.com/gokadzev/Musify/releases/latest)
+[<img src="https://github.com/gokadzev/Musify/raw/master/.github/assets/get-it-on-github.png" alt="Get it on Github" height="80">](https://github.com/emadmedo19/Musify/releases/latest)
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on Fdroid" height="80">](https://f-droid.org/packages/com.gokadzev.musify.fdroid)
 
 

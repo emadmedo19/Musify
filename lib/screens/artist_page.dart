@@ -29,6 +29,7 @@ import 'package:musify/extensions/l10n.dart';
 import 'package:musify/main.dart';
 import 'package:musify/screens/playlist_page.dart';
 import 'package:musify/services/artist_service.dart';
+import 'package:musify/services/music_taste_service.dart';
 import 'package:musify/services/playlists_manager.dart';
 import 'package:musify/services/router_service.dart';
 import 'package:musify/services/settings_manager.dart';
@@ -36,15 +37,14 @@ import 'package:musify/utilities/app_utils.dart';
 import 'package:musify/utilities/async_loader.dart';
 import 'package:musify/utilities/flutter_toast.dart';
 import 'package:musify/widgets/artist_shelf.dart';
+import 'package:musify/widgets/discovery_presentation.dart';
 import 'package:musify/widgets/mini_player_bottom_space.dart';
-import 'package:musify/widgets/playlist_hero_artwork.dart';
 import 'package:musify/widgets/playlist_page/add_to_playlist_button.dart';
 import 'package:musify/widgets/playlist_page/download_button.dart';
 import 'package:musify/widgets/playlist_page/empty_playlist_state.dart';
 import 'package:musify/widgets/playlist_page/like_button.dart';
 import 'package:musify/widgets/playlist_page/playlist_action_buttons.dart';
 import 'package:musify/widgets/playlist_page/playlist_header.dart';
-import 'package:musify/widgets/playlist_page/playlist_sliver_app_bar.dart';
 import 'package:musify/widgets/section_header.dart';
 import 'package:musify/widgets/song_bar.dart';
 import 'package:musify/widgets/spinner.dart';
@@ -216,11 +216,11 @@ class _ArtistPageState extends State<ArtistPage> {
           padding: commonSingleChildScrollViewPadding,
           child: CustomScrollView(
             slivers: [
-              PlaylistSliverAppBar(
+              DiscoveryArtistCover(
                 title: _artistTitle,
-                artwork: PlaylistHeroArtwork(
-                  _artist!,
-                  cubeIcon: FluentIcons.person_24_filled,
+                image: _artist!['image']?.toString(),
+                isChosen: musicTaste.value.artists.contains(
+                  widget.artistData?['title']?.toString() ?? widget.artistId,
                 ),
               ),
               SliverToBoxAdapter(child: _buildHeaderSection()),

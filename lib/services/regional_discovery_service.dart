@@ -126,17 +126,53 @@ Future<List<Map>> getRegionalHomePlaylists({int count = 8}) async {
   return items;
 }
 
+String? _profileKey;
+Future<List<Map>>? _profileFuture;
+DateTime? _profileTime;
+
+Future<List<Map>> getFavoriteArtistProfiles() {
+  final taste = musicTaste.value;
+  if (_profileKey == taste.cacheKey &&
+      _profileFuture != null &&
+      _profileTime != null &&
+      DateTime.now().difference(_profileTime!) < const Duration(hours: 6))
+    return _profileFuture!;
+  _profileKey = taste.cacheKey;
+  _profileTime = DateTime.now();
+  final names = taste.artists.take(4).toList();
+  _profileFuture =
+      loadRegionalDiscovery(
+        names,
+        (name) => _cachedSearch('profile', name, (artist) async {
+          final profile = await getArtistProfile(artist, preferredName: artist);
+          return profile == null
+              ? []
+              : [
+                  <String, dynamic>{...profile, 'discoveryName': name},
+                ];
+        }),
+        perQuery: 1,
+        limit: 4,
+      ).then((items) {
+        if (items.isEmpty && _profileKey == taste.cacheKey)
+          _profileFuture = null;
+        return items;
+      });
+  return _profileFuture!;
+}
+
 Future<List<Map>> getFavoriteArtistAlbums() async {
-  final names = [...musicTaste.value.artists]..shuffle();
-  if (names.isEmpty) return [];
-  return loadRegionalDiscovery(
-    names.take(4).toList(),
-    (name) => _cachedSearch('artist_albums', name, (artist) async {
-      final profile = await getArtistProfile(artist, preferredName: artist);
-      return (profile?['releases'] as List? ?? []).whereType<Map>().toList();
-    }),
-    perQuery: 3,
-    limit: 8,
+  final profiles = await getFavoriteArtistProfiles();
+  return interleaveDiscoveryResults(
+    profiles
+        .map(
+          (profile) => (profile['releases'] as List? ?? [])
+              .whereType<Map>()
+              .take(3)
+              .toList(),
+        )
+        .toList(),
+    8,
   );
 }
 

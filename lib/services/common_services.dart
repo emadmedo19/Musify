@@ -29,7 +29,9 @@ import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 import 'package:musify/constants/clients.dart';
 import 'package:musify/main.dart' show logger;
+import 'package:musify/models/discovery_feedback.dart';
 import 'package:musify/services/data_manager.dart';
+import 'package:musify/services/discovery_feedback_service.dart';
 import 'package:musify/services/io_service.dart';
 import 'package:musify/services/lyrics_manager.dart';
 import 'package:musify/services/playlists_manager.dart';
@@ -208,9 +210,27 @@ Future<List> getRecommendedSongs() async {
           return <dynamic>[];
         });
     final results = await Future.wait([regionalFuture, safePersonal]);
-    return blendRegionalRecommendations(
-      results[0].whereType<Map>().toList(),
-      results[1].whereType<Map>().toList(),
+    final recentIds = userRecentlyPlayed.value
+        .whereType<Map>()
+        .map((s) => s['ytid']?.toString())
+        .whereType<String>()
+        .toSet();
+    final feedback = discoveryFeedback.value;
+    final regional = rankDiscoverySongs(
+      results[0],
+      feedback,
+      recentlyPlayed: recentIds,
+      limit: 32,
+    );
+    final personal = rankDiscoverySongs(
+      results[1],
+      feedback,
+      recentlyPlayed: recentIds,
+    );
+    return rankDiscoverySongs(
+      blendRegionalRecommendations(regional, personal),
+      feedback,
+      recentlyPlayed: recentIds,
     );
   } catch (e, stackTrace) {
     logger.log(
@@ -268,7 +288,10 @@ Future<List> _getRecommendationsFromSeedSongs(List seedSongs) async {
 
   final sorted = scores.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
-  return sorted.take(15).map((e) => songMap[e.key]!).toList();
+  return rankDiscoverySongs(
+    sorted.map((e) => songMap[e.key]!),
+    discoveryFeedback.value,
+  );
 }
 
 /// Number of playlist tracks used to seed recommendations while keeping network cost bounded.
@@ -290,7 +313,7 @@ Future<List> getRecommendedSongsForPlaylist(
 
     final cached = _playlistRecommendationsCache[playlistId];
     if (cached != null) {
-      final stillFresh = cached
+      final stillFresh = rankDiscoverySongs(cached, discoveryFeedback.value)
           .where((song) => !existingIds.contains(song['ytid']?.toString()))
           .toList();
       if (stillFresh.isNotEmpty) return stillFresh;
@@ -650,12 +673,17 @@ Future<Map<String, dynamic>?> getSimilarSong(
     final song = await ytClient.videos.get(songYtId);
     final relatedSongs = await ytClient.videos.getRelatedVideos(song) ?? [];
 
-    for (final video in relatedSongs) {
-      final candidate = returnSongLayout(0, video);
-      if (!excludedYtIds.contains(candidate['ytid']?.toString())) {
-        return candidate;
-      }
-    }
+    final candidates = rankDiscoverySongs(
+      relatedSongs
+          .map((video) => returnSongLayout(0, video))
+          .where(
+            (candidate) =>
+                !excludedYtIds.contains(candidate['ytid']?.toString()),
+          ),
+      discoveryFeedback.value,
+    );
+    if (candidates.isNotEmpty)
+      return Map<String, dynamic>.from(candidates.first);
     logger.log('No new related songs found for $songYtId');
   } catch (e, stackTrace) {
     logger.log(

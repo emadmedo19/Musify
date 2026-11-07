@@ -36,6 +36,7 @@ class RecommendedSongsSection extends StatelessWidget {
     required this.listKeyPrefix,
     this.showPlayButton = true,
     this.onAddSong,
+    this.onDiscoveryFeedback,
   });
 
   final String title;
@@ -47,6 +48,7 @@ class RecommendedSongsSection extends StatelessWidget {
 
   /// When set, each row shows an add button instead of the overflow menu.
   final void Function(Map song)? onAddSong;
+  final void Function(Map song, bool reduceArtist)? onDiscoveryFeedback;
 
   @override
   Widget build(BuildContext context) {
@@ -82,18 +84,41 @@ class RecommendedSongsSection extends StatelessWidget {
             final borderRadius = getItemBorderRadius(index, songs.length);
             return RepaintBoundary(
               key: listItemKey(listKeyPrefix, index, song),
-              child: SongBar(
-                song,
-                true,
-                barPadding: const EdgeInsetsDirectional.only(
-                  top: 10,
-                  bottom: 10,
-                  start: 12,
-                ),
-                borderRadius: borderRadius,
-                onAdd: onAddSong != null && song is Map
-                    ? () => onAddSong!(song)
-                    : null,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SongBar(
+                      song,
+                      true,
+                      barPadding: const EdgeInsetsDirectional.only(
+                        top: 10,
+                        bottom: 10,
+                        start: 12,
+                      ),
+                      borderRadius: borderRadius,
+                      onAdd: onAddSong != null && song is Map
+                          ? () => onAddSong!(song)
+                          : null,
+                    ),
+                  ),
+                  if (onDiscoveryFeedback != null && song is Map)
+                    PopupMenuButton<bool>(
+                      tooltip: 'تحسين الاقتراحات',
+                      icon: const Icon(Icons.thumb_down_outlined, size: 19),
+                      onSelected: (reduce) =>
+                          onDiscoveryFeedback!(song, reduce),
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: false,
+                          child: Text('مش مهتم بالأغنية دي'),
+                        ),
+                        PopupMenuItem(
+                          value: true,
+                          child: Text('اقترح أقل من الفنان ده'),
+                        ),
+                      ],
+                    ),
+                ],
               ),
             );
           },

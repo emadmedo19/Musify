@@ -2,6 +2,11 @@ name: Build fork APK
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish a signed stable release after all checks pass
+        type: boolean
+        default: false
   push:
     branches: [build/fork-apk]
   pull_request:
@@ -14,6 +19,9 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    outputs:
+      signed: ${{ steps.signing.outputs.configured }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -27,11 +35,26 @@ jobs:
           version=$(sed -n 's/^  flutter: \^*//p' pubspec.yaml)
           test -n "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Resolve application version
+        id: release
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version: \([0-9.]*\)+.*/\1/p' pubspec.yaml)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: ${{ steps.flutter.outputs.version }}
           cache: true
+      - name: Cache Gradle downloads
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-musify-gradle-${{ hashFiles('android/**/*.gradle*', 'pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-musify-gradle-
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile
       - name: Generate localizations
@@ -39,12 +62,67 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-pub
       - name: Run utility tests
-        run: flutter test --no-pub test/map_utils_test.dart test/sort_utils_test.dart test/media_duration_test.dart test/regional_discovery_test.dart test/music_taste_test.dart test/music_taste_page_test.dart test/music_taste_storage_test.dart
-      - name: Build installable APK
-        run: flutter build apk --debug --flavor github --no-pub
+        run: flutter test --no-pub test/map_utils_test.dart test/sort_utils_test.dart test/media_duration_test.dart test/regional_discovery_test.dart test/music_taste_test.dart test/music_taste_page_test.dart test/music_taste_storage_test.dart test/fork_updates_test.dart test/playback_recovery_test.dart test/discovery_feedback_test.dart test/discovery_feedback_storage_test.dart test/arabic_localization_test.dart test/discovery_presentation_test.dart
+      - name: Prepare private release signing when configured
+        id: signing
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MUSIFY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MUSIFY_KEYSTORE_PASSWORD }}
+          REQUEST_PUBLISH: ${{ inputs.publish_release || false }}
+        shell: bash
+        run: |
+          if [[ -n "$KEYSTORE_BASE64" && -n "$KEYSTORE_PASSWORD" ]]; then
+            umask 077
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/musify-release.p12"
+            printf 'storeFile=%s\nkeyAlias=musify-fork\nstorePassword=%s\nkeyPassword=%s\n' "$RUNNER_TEMP/musify-release.p12" "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
+            certificate=$(keytool -exportcert -alias musify-fork -keystore "$RUNNER_TEMP/musify-release.p12" -storepass:env KEYSTORE_PASSWORD | sha256sum | cut -d ' ' -f 1)
+            test "$certificate" = "$(cat android/fork-signing-certificate.sha256)"
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            if [[ "$REQUEST_PUBLISH" == 'true' ]]; then echo 'Configure the private signing secrets before publishing.'; exit 1; fi
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo 'Release signing secrets are absent. The release APK must be signed privately before installation.'
+          fi
+      - name: Build release APK
+        run: flutter build apk --release --flavor github --no-pub
+      - name: Stage signed APK
+        if: steps.signing.outputs.configured == 'true'
+        run: |
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+          certificate=$("$signer" verify --print-certs build/app/outputs/flutter-apk/app-github-release.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          test "$certificate" = "$(cat android/fork-signing-certificate.sha256)"
+          mkdir -p build/distribution
+          cp build/app/outputs/flutter-apk/app-github-release.apk build/distribution/Musify-Arabic.apk
+      - name: Stage unsigned APK for private signing
+        if: steps.signing.outputs.configured != 'true'
+        run: |
+          mkdir -p build/distribution
+          cp build/app/outputs/flutter-apk/app-github-release.apk build/distribution/Musify-UNSIGNED.apk
       - uses: actions/upload-artifact@v5
         with:
-          name: Musify-fork-debug-APK
-          path: build/app/outputs/flutter-apk/app-github-debug.apk
+          name: ${{ steps.signing.outputs.configured == 'true' && 'Musify-signed-release' || 'Musify-unsigned-for-private-signing' }}
+          path: build/distribution/*.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Remove signing material
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/musify-release.p12"
+
+  publish:
+    needs: android
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release && needs.android.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Musify-signed-release
+          path: distribution
+      - name: Publish the verified signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.android.outputs.version }}
+        run: |
+          gh release create "v$RELEASE_VERSION" distribution/Musify-Arabic.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Musify عربي $RELEASE_VERSION" --generate-notes

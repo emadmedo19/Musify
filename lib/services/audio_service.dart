@@ -24,6 +24,7 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:musify/constants/clients.dart';
@@ -38,6 +39,7 @@ import 'package:musify/utilities/map_utils.dart';
 import 'package:musify/utilities/media_duration.dart';
 import 'package:musify/utilities/mediaitem.dart';
 import 'package:musify/utilities/platform_utils.dart';
+import 'package:musify/utilities/playback_recovery.dart';
 import 'package:musify/utilities/queue_entry_utils.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -108,6 +110,8 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
   bool _completionEventPending = false;
   bool _completionHandlerLoadStarted = false;
   String? _lastError;
+  final playbackProblem = ValueNotifier<String?>(null);
+  final _runtimeRecovery = PlaybackRecoveryGate();
   int _consecutiveErrors = 0;
 
   // Timers and sleep-timer state.
@@ -241,6 +245,12 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
           },
           onError: (error, stackTrace) {
             _logStreamError('Playback event stream error', error, stackTrace);
+            if (_queuePlayWhenReady) {
+              _lastError = error.toString();
+              playbackProblem.value =
+                  'تعذّر تشغيل الصوت. تأكد من الاتصال وحاول مرة أخرى.';
+              unawaited(_recoverRuntimePlayback(error));
+            }
           },
         );
 
@@ -277,7 +287,8 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
         if (state.processingState == ProcessingState.idle &&
             !state.playing &&
             _lastError != null) {
-          Future.microtask(_handlePlaybackError);
+          // Native runtime errors are recovered in the playback-event handler.
+          // Initial source-load failures are handled by the queue transition.
         }
         _debouncedStateUpdate();
       },
@@ -842,6 +853,61 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
     }
   }
 
+  Future<void> _recoverRuntimePlayback(Object error) async {
+    if (!_hasCurrentQueueIndex ||
+        _currentLoadingIndex >= 0 ||
+        !_queuePlayWhenReady ||
+        offlineMode.value)
+      return;
+    final originalTransition = _songTransitionCounter;
+    final index = _currentQueueIndex;
+    final song = cloneMap(_queueList[index]);
+    if (song['isLive'] == true || await _resolveOfflineAndSetPaths(song))
+      return;
+    if (originalTransition != _songTransitionCounter ||
+        index != _currentQueueIndex ||
+        !_queuePlayWhenReady)
+      return;
+    final mediaId = _getMediaItemForQueue(song).id;
+    final token = _runtimeRecovery.begin(mediaId);
+    if (token == null) return;
+    final resumePosition = audioPlayer.position;
+    int? recoveryTransition;
+    try {
+      await Future<void>.delayed(_errorRetryDelay);
+      if (!_runtimeRecovery.isCurrent(token) ||
+          !_queuePlayWhenReady ||
+          originalTransition != _songTransitionCounter ||
+          index != _currentQueueIndex ||
+          offlineMode.value)
+        return;
+      recoveryTransition = ++_songTransitionCounter;
+      _currentLoadingTransitionId = recoveryTransition;
+      _currentLoadingIndex = index;
+      final recovered = await _retryPlayWithFreshUrl(
+        song,
+        mediaId: mediaId,
+        transitionId: recoveryTransition,
+        invalidateCache: true,
+        initialPosition: resumePosition,
+      );
+      if (_runtimeRecovery.isCurrent(token) && recovered) {
+        _lastError = null;
+        playbackProblem.value = null;
+        _updatePlaybackState();
+      }
+    } catch (e, st) {
+      logger.log('Runtime playback recovery failed', error: e, stackTrace: st);
+    } finally {
+      _runtimeRecovery.finish(token);
+      if (recoveryTransition != null &&
+          _currentLoadingTransitionId == recoveryTransition) {
+        _currentLoadingIndex = -1;
+        _currentLoadingTransitionId = -1;
+      }
+    }
+  }
+
   bool _canRetryPlayback() =>
       hasNext ||
       (repeatNotifier.value == AudioServiceRepeatMode.all &&
@@ -863,9 +929,12 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
 
     if (_canRetryPlayback()) {
       final failedSongIndex = _currentQueueIndex;
+      final failedTransition = _songTransitionCounter;
       Future.delayed(_errorRetryDelay, () {
         // Only retry if still on the same song (user didn't manually change tracks)
-        if (_currentQueueIndex == failedSongIndex) {
+        if (_currentQueueIndex == failedSongIndex &&
+            _songTransitionCounter == failedTransition &&
+            _queuePlayWhenReady) {
           skipToNext();
         }
       });
@@ -1712,6 +1781,16 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
 
   @override
   Future<void> onTaskRemoved() async {
+    if (keepAudioOnTaskRemoval(
+      playbackIntended: _queuePlayWhenReady,
+      playing: audioPlayer.playing,
+      loading: _currentLoadingIndex >= 0,
+    )) {
+      // Keep the foreground media service alive when dismissing the app UI.
+      // Notification controls remain available to pause or stop explicitly.
+      await super.onTaskRemoved();
+      return;
+    }
     try {
       await stop();
       if (isMobilePlatform) {
@@ -1726,9 +1805,15 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
 
   @override
   Future<void> play() async {
-    if (isDesktopPlatform && _currentLoadingIndex >= 0)
-      _queuePlayWhenReady = true;
+    _queuePlayWhenReady = true;
+    _runtimeRecovery.reset();
     try {
+      if (_lastError != null &&
+          _hasCurrentQueueIndex &&
+          _currentLoadingIndex < 0) {
+        await skipToSong(_currentQueueIndex);
+        return;
+      }
       if (audioPlayer.audioSource == null) {
         final recentSong = latestResumableSong();
         if (recentSong != null) {
@@ -1760,8 +1845,8 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
 
   @override
   Future<void> pause() async {
-    if (isDesktopPlatform && _currentLoadingIndex >= 0)
-      _queuePlayWhenReady = false;
+    _queuePlayWhenReady = false;
+    _runtimeRecovery.cancel();
     try {
       listeningStatsService.recordListeningSessionProgress(
         wasPlaying: audioPlayer.playing,
@@ -1783,6 +1868,9 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
 
   @override
   Future<void> stop() async {
+    playbackProblem.value = null;
+    _queuePlayWhenReady = false;
+    _runtimeRecovery.cancel();
     _debounceTimer?.cancel();
     _completionEventPending = false;
     _currentLoadingIndex = -1;
@@ -2083,6 +2171,7 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
     bool allowOnlineRetry = true,
     int? transitionId,
     bool playWhenReady = true,
+    Duration? initialPosition,
   }) async {
     try {
       // Final staleness check before we touch the audio player.
@@ -2097,17 +2186,15 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
       final wasPlayingBeforeSwap = audioPlayer.playing;
 
       final loadedDuration = await audioPlayer
-          .setAudioSource(audioSource)
+          .setAudioSource(audioSource, initialPosition: initialPosition)
           .timeout(_songTransitionTimeout);
 
       // Check once more after the async setAudioSource: a fast offline song
       // could have loaded and started playing while we were buffering/setting up.
       // If so, stop the source we just loaded and yield to the newer song.
-      if (_isStaleTransition(transitionId)) {
-        unawaited(audioPlayer.stop());
-        return false;
-      }
+      if (_isStaleTransition(transitionId)) return false;
 
+      playbackProblem.value = null;
       final resolvedDuration = loadedDuration ?? audioPlayer.duration;
       if (resolvedDuration != null && _playerSourceMatchesCurrentSong()) {
         _updateCurrentMediaItemWithDuration(
@@ -2133,9 +2220,11 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
               audioPlayer.playing &&
               audioPlayer.processingState == ProcessingState.ready,
         );
-      final startPlayback = transitionId == null || !isDesktopPlatform
-          ? playWhenReady
-          : _queuePlayWhenReady;
+      final startPlayback = shouldStartLoadedPlayback(
+        playWhenReady: playWhenReady,
+        hasTransition: transitionId != null,
+        currentPlaybackIntent: _queuePlayWhenReady,
+      );
       if (startPlayback)
         unawaited(
           audioPlayer.play().catchError((Object e, StackTrace stackTrace) {
@@ -2211,6 +2300,7 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
     int? transitionId,
     bool playWhenReady = true,
     bool invalidateCache = false,
+    Duration? initialPosition,
   }) async {
     final songId = song['ytid']?.toString();
     if (songId == null || songId.isEmpty) return false;
@@ -2230,6 +2320,7 @@ class MusifyAudioHandler extends BaseAudioHandler implements AndroidAutoHost {
       false,
       mediaId: mediaId,
       allowOnlineRetry: false,
+      initialPosition: initialPosition,
       transitionId: transitionId,
       playWhenReady: playWhenReady,
     );

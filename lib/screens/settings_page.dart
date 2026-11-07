@@ -30,8 +30,10 @@ import 'package:musify/screens/local_sync_page.dart';
 import 'package:musify/screens/search_page.dart';
 import 'package:musify/services/common_services.dart';
 import 'package:musify/services/data_manager.dart';
+import 'package:musify/services/discovery_feedback_service.dart';
 import 'package:musify/services/listening_stats_service.dart';
 import 'package:musify/services/local_sync_service.dart';
+import 'package:musify/services/music_taste_service.dart';
 import 'package:musify/services/playlist_download_service.dart';
 import 'package:musify/services/playlists_manager.dart';
 import 'package:musify/services/router_service.dart';
@@ -433,6 +435,8 @@ class SettingsPage extends StatelessWidget {
               );
               if (result.success) {
                 reloadSettingsFromStorage();
+                reloadMusicTaste();
+                reloadDiscoveryFeedback();
                 reloadSongLibraryStateFromStorage();
                 reloadPlaylistLibraryStateFromStorage();
                 reloadSearchHistoryFromStorage();
@@ -486,7 +490,7 @@ class SettingsPage extends StatelessWidget {
             context.l10n!.downloadAppUpdate,
             FluentIcons.arrow_download_24_regular,
             borderRadius: commonCustomBarRadiusLast,
-            onTap: checkAppUpdates,
+            onTap: () => checkAppUpdates(manually: true),
           ),
       ],
     );
