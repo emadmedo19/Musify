@@ -34,13 +34,13 @@ import 'package:musify/services/io_service.dart';
 import 'package:musify/services/lyrics_manager.dart';
 import 'package:musify/services/playlists_manager.dart';
 import 'package:musify/services/proxy_manager.dart';
+import 'package:musify/services/regional_discovery_service.dart';
 import 'package:musify/services/settings_manager.dart';
 import 'package:musify/utilities/app_utils.dart';
 import 'package:musify/utilities/formatter.dart';
 import 'package:musify/utilities/map_utils.dart';
+import 'package:musify/utilities/regional_discovery.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-
-List globalSongs = [];
 
 ValueNotifier<List> userLikedSongsList = ValueNotifier<List>(
   Hive.box('user').get('likedSongs', defaultValue: []),
@@ -192,11 +192,26 @@ Future<List> fetchSongsList(String searchQuery) async {
 
 Future<List> getRecommendedSongs() async {
   try {
-    if (externalRecommendations.value && userRecentlyPlayed.value.isNotEmpty) {
-      return await _getRecommendationsFromRecentlyPlayed();
-    } else {
-      return await _getRecommendationsFromMixedSources();
-    }
+    final regionalFuture = getRegionalHomeSongs();
+    final personalFuture =
+        externalRecommendations.value && userRecentlyPlayed.value.isNotEmpty
+        ? _getRecommendationsFromRecentlyPlayed()
+        : _getRecommendationsFromMixedSources();
+    final safePersonal = personalFuture
+        .timeout(const Duration(seconds: 15), onTimeout: () => <dynamic>[])
+        .catchError((Object error, StackTrace stackTrace) {
+          logger.log(
+            'Personal recommendations failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return <dynamic>[];
+        });
+    final results = await Future.wait([regionalFuture, safePersonal]);
+    return blendRegionalRecommendations(
+      results[0].whereType<Map>().toList(),
+      results[1].whereType<Map>().toList(),
+    );
   } catch (e, stackTrace) {
     logger.log(
       'Error in getRecommendedSongs',
@@ -327,12 +342,6 @@ Future<List> _getRecommendationsFromMixedSources() async {
     userLikedSongsList.value,
     userRecentlyPlayed.value,
   ];
-
-  if (globalSongs.isEmpty) {
-    const playlistId = 'PLgzTt0k8mXzEk586ze4BjvDXR7c-TUSnx';
-    globalSongs = await getSongsFromPlaylist(playlistId);
-  }
-  recommendationSources.add(globalSongs.take(10));
 
   if (userCustomPlaylists.value.isNotEmpty) {
     for (final userPlaylist in userCustomPlaylists.value) {
