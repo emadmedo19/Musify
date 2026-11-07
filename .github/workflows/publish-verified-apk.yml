@@ -1,0 +1,68 @@
+name: Sign and publish a verified APK
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful trusted Build fork APK run with unsigned artifact
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate the reviewed build
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          [[ "$BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > "$RUNNER_TEMP/build.json"
+          python3 - <<'PY'
+          import json,os,re
+          j=json.load(open(os.environ['RUNNER_TEMP']+'/build.json'))
+          assert j['conclusion']=='success' and j['status']=='completed'
+          assert j['head_repository']['full_name'].lower()==os.environ['GITHUB_REPOSITORY'].lower()
+          assert j['event'] in ('push','workflow_dispatch')
+          assert j['head_branch'] in ('build/fork-apk','master')
+          assert j['path'].split('@')[0]=='.github/workflows/fork-apk.yml'
+          assert re.fullmatch('[a-f0-9]{40}',j['head_sha'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('sha='+j['head_sha']+'\n')
+          PY
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.build_run_id }}
+          name: Musify-unsigned-for-private-signing
+          path: build-input
+      - name: Sign with the permanent key and verify APK identity
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MUSIFY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MUSIFY_KEYSTORE_PASSWORD }}
+        run: |
+          python3 scripts/sign_release.py build-input/Musify-UNSIGNED.apk distribution
+          version=$(sed -n 's/^version: \([0-9.]*\)+.*/\1/p' pubspec.yaml)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Musify-signed-release
+          path: distribution/*
+          if-no-files-found: error
+      - name: Publish the verified APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.signing.outputs.version }}
+          SOURCE_SHA: ${{ steps.build.outputs.sha }}
+        run: bash .github/scripts/publish_fork_release.sh

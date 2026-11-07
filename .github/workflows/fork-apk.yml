@@ -75,7 +75,6 @@ jobs:
           if [[ -n "$KEYSTORE_BASE64" && -n "$KEYSTORE_PASSWORD" ]]; then
             umask 077
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/musify-release.p12"
-            printf 'storeFile=%s\nkeyAlias=musify-fork\nstorePassword=%s\nkeyPassword=%s\n' "$RUNNER_TEMP/musify-release.p12" "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
             certificate=$(keytool -exportcert -alias musify-fork -keystore "$RUNNER_TEMP/musify-release.p12" -storepass:env KEYSTORE_PASSWORD | sha256sum | cut -d ' ' -f 1)
             test "$certificate" = "$(cat android/fork-signing-certificate.sha256)"
             echo 'configured=true' >> "$GITHUB_OUTPUT"
@@ -88,12 +87,10 @@ jobs:
         run: flutter build apk --release --flavor github --no-pub
       - name: Stage signed APK
         if: steps.signing.outputs.configured == 'true'
-        run: |
-          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
-          certificate=$("$signer" verify --print-certs build/app/outputs/flutter-apk/app-github-release.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          test "$certificate" = "$(cat android/fork-signing-certificate.sha256)"
-          mkdir -p build/distribution
-          cp build/app/outputs/flutter-apk/app-github-release.apk build/distribution/Musify-Arabic.apk
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MUSIFY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.MUSIFY_KEYSTORE_PASSWORD }}
+        run: python3 scripts/sign_release.py build/app/outputs/flutter-apk/app-github-release.apk build/distribution
       - name: Stage unsigned APK for private signing
         if: steps.signing.outputs.configured != 'true'
         run: |
@@ -102,7 +99,7 @@ jobs:
       - uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.signing.outputs.configured == 'true' && 'Musify-signed-release' || 'Musify-unsigned-for-private-signing' }}
-          path: build/distribution/*.apk
+          path: build/distribution/*
           if-no-files-found: error
           retention-days: 30
       - name: Remove signing material
@@ -116,6 +113,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: Musify-signed-release
@@ -124,5 +124,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ needs.android.outputs.version }}
-        run: |
-          gh release create "v$RELEASE_VERSION" distribution/Musify-Arabic.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Musify عربي $RELEASE_VERSION" --generate-notes
+          SOURCE_SHA: ${{ github.sha }}
+        run: bash .github/scripts/publish_fork_release.sh
